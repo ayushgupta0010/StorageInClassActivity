@@ -14,10 +14,11 @@ import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
 import com.squareup.picasso.Picasso
 import org.json.JSONObject
-
-// TODO (1: Fix any bugs)
-// TODO (2: Add function saveComic(...) to save comic info when downloaded
-// TODO (3: Automatically load previously saved comic when app starts)
+import java.io.BufferedReader
+import java.io.File
+import java.io.FileOutputStream
+import java.io.FileReader
+import java.io.IOException
 
 class MainActivity : AppCompatActivity() {
 
@@ -47,22 +48,7 @@ class MainActivity : AppCompatActivity() {
             downloadComic(numberEditText.text.toString())
         }
 
-        try {
-            val br = BufferedReader(FileReader(file))
-            val text = StringBuilder()
-            var line: String?
-            while (br.readLine().also { line = it } != null) {
-                text.append(line)
-                text.append('\n')
-            }
-            br.close()
-            if (text.toString() != "") {
-                var JSONFileCached = JSONObject(text.toString())
-                showComic(JSONFileCached)
-            }
-        } catch (e: IOException) {
-            e.printStackTrace()
-        }
+        loadComic()
     }
 
     // Fetches comic from web as JSONObject
@@ -93,5 +79,24 @@ class MainActivity : AppCompatActivity() {
             e.printStackTrace()
         }
         return null
+    }
+
+    private fun loadComic() {
+        try {
+            val br = BufferedReader(FileReader(file))
+            val text = StringBuilder()
+            var line: String?
+            while (br.readLine().also { line = it } != null) {
+                text.append(line)
+                text.append('\n')
+            }
+            br.close()
+            if (text.toString() != "") {
+                var JSONFileCached = JSONObject(text.toString())
+                showComic(JSONFileCached)
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
     }
 }
