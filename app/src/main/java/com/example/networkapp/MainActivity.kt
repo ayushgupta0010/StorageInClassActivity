@@ -27,12 +27,15 @@ class MainActivity : AppCompatActivity() {
     lateinit var numberEditText: EditText
     lateinit var showButton: Button
     lateinit var comicImageView: ImageView
+    private val internalFilename = "cached_comic"
+    private lateinit var file: File
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         requestQueue = Volley.newRequestQueue(this)
+        file = File(filesDir, internalFilename)
 
         titleTextView = findViewById<TextView>(R.id.comicTitleTextView)
         descriptionTextView = findViewById<TextView>(R.id.comicDescriptionTextView)
@@ -44,30 +47,51 @@ class MainActivity : AppCompatActivity() {
             downloadComic(numberEditText.text.toString())
         }
 
+        try {
+            val br = BufferedReader(FileReader(file))
+            val text = StringBuilder()
+            var line: String?
+            while (br.readLine().also { line = it } != null) {
+                text.append(line)
+                text.append('\n')
+            }
+            br.close()
+            if (text.toString() != "") {
+                var JSONFileCached = JSONObject(text.toString())
+                showComic(JSONFileCached)
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
     }
 
     // Fetches comic from web as JSONObject
-    private fun downloadComic (comicId: String) {
+    private fun downloadComic(comicId: String) {
         val url = "https://xkcd.com/$comicId/info.0.json"
-        requestQueue.add (
-            JsonObjectRequest(url
-                , {showComic(it)}
-                , {}
+        requestQueue.add(
+            JsonObjectRequest(url, { showComic(saveComic(it)) }, {}
             )
         )
     }
 
     // Display a comic for a given comic JSON object
-    private fun showComic (comicObject: JSONObject) {
+    private fun showComic(comicObject: JSONObject?) {
+        if (comicObject == null) return
         titleTextView.text = comicObject.getString("title")
         descriptionTextView.text = comicObject.getString("alt")
         Picasso.get().load(comicObject.getString("img")).into(comicImageView)
     }
 
     // Implement this function
-    private fun saveComic(comicObject: JSONObject) {
-
+    private fun saveComic(comicObject: JSONObject): JSONObject? {
+        try {
+            val outputStream = FileOutputStream(file)
+            outputStream.write(comicObject.toString().toByteArray())
+            outputStream.close()
+            return comicObject
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return null
     }
-
-
 }
